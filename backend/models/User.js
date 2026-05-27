@@ -28,6 +28,14 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  maxStreak: {
+    type: Number,
+    default: 0
+  },
+  lastStreakDate: {
+    type: String,   // stored as 'YYYY-MM-DD' so timezone-safe day comparison
+    default: null
+  },
   lastActivity: {
     type: Date,
     default: Date.now

@@ -12,6 +12,10 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchData();
+    // Refetch every time the tab becomes visible (user returns from quiz/video)
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchData(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
   }, []);
 
   const fetchData = async () => {
@@ -39,22 +43,42 @@ const Dashboard = () => {
     );
   }
 
-  // Prepare weekly performance data with real dates
-  const weeklyPerformanceData = analytics?.weeklyProgress?.slice(-7).map((item) => ({
-    day: new Date(item._id).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
-    score: Math.round(item.avgScore),
-    quizzes: item.count,
-  })) || [];
+  // Prepare weekly performance data — always last 7 days, 0 for empty days
+  const weeklyPerformanceData = (() => {
+    const result = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      const match = analytics?.weeklyProgress?.find(w => w._id === key);
+      result.push({
+        day: d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+        score: match ? Math.round(match.avgScore) : 0,
+        quizzes: match ? match.count : 0,
+      });
+    }
+    return result;
+  })();
 
-  // Learning activity data (last 14 days) - real data
-  const learningActivityData = analytics?.weeklyProgress?.slice(-14).map((item, index) => ({
-    date: new Date(item._id).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    hours: Math.round((item.count * 0.5) * 10) / 10, // Estimate hours based on quizzes
-    quizzes: item.count,
-  })) || [];
+  // Learning activity data — last 14 days, 0 for empty days
+  const learningActivityData = (() => {
+    const result = [];
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      const match = analytics?.weeklyProgress?.find(w => w._id === key);
+      result.push({
+        date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        hours: match ? Math.round(match.count * 0.5 * 10) / 10 : 0,
+        quizzes: match ? match.count : 0,
+      });
+    }
+    return result;
+  })();
 
   // Monthly trend data (last 6 months)
-  const monthlyTrendData = analytics?.monthlyProgress?.slice(-6).map((item) => ({
+  const monthlyTrendData = analytics?.monthlyProgress?.map((item) => ({
     month: item._id,
     score: Math.round(item.avgScore),
     quizzes: item.count,
@@ -107,62 +131,87 @@ const Dashboard = () => {
       <div className="min-h-screen bg-dark-bg p-6 space-y-6">
         {/* Top Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Total Courses Card */}
-          <div className="bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl p-6 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
+
+          {/* Total Courses */}
+          <div className="relative rounded-2xl p-6 overflow-hidden"
+            style={{background:'linear-gradient(135deg,rgba(59,130,246,0.18) 0%,rgba(99,102,241,0.22) 100%)',border:'1px solid rgba(99,102,241,0.35)',backdropFilter:'blur(16px)',boxShadow:'0 8px 32px rgba(59,130,246,0.18)'}}>
+            <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full" style={{background:'rgba(99,102,241,0.15)'}}/>
+            <div className="absolute -bottom-4 -left-4 w-20 h-20 rounded-full" style={{background:'rgba(59,130,246,0.1)'}}/>
             <div className="relative z-10">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium uppercase tracking-wide opacity-90">Total Courses</span>
-                <svg className="w-5 h-5 opacity-75" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
-                </svg>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold uppercase tracking-widest" style={{color:'rgba(165,180,252,0.9)'}}>Total Courses</span>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{background:'rgba(99,102,241,0.25)'}}>
+                  <svg className="w-5 h-5" style={{color:'#a5b4fc'}} fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z"/>
+                  </svg>
+                </div>
               </div>
-              <p className="text-4xl font-bold">{subjects.length}</p>
+              <p className="text-5xl font-black text-white mt-1">{subjects.length}</p>
+              <p className="text-xs mt-2" style={{color:'rgba(165,180,252,0.7)'}}>Subjects available</p>
             </div>
           </div>
 
-          {/* Avg Quiz Score Card */}
-          <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl p-6 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
+          {/* Avg Quiz Score */}
+          <div className="relative rounded-2xl p-6 overflow-hidden"
+            style={{background:'linear-gradient(135deg,rgba(139,92,246,0.18) 0%,rgba(168,85,247,0.22) 100%)',border:'1px solid rgba(168,85,247,0.35)',backdropFilter:'blur(16px)',boxShadow:'0 8px 32px rgba(139,92,246,0.18)'}}>
+            <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full" style={{background:'rgba(168,85,247,0.15)'}}/>
+            <div className="absolute -bottom-4 -left-4 w-20 h-20 rounded-full" style={{background:'rgba(139,92,246,0.1)'}}/>
             <div className="relative z-10">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium uppercase tracking-wide opacity-90">Avg. Quiz Score</span>
-                <svg className="w-5 h-5 opacity-75" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                  <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm9.707 5.707a1 1 0 00-1.414-1.414L9 12.586l-1.293-1.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold uppercase tracking-widest" style={{color:'rgba(216,180,254,0.9)'}}>Avg. Quiz Score</span>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{background:'rgba(168,85,247,0.25)'}}>
+                  <svg className="w-5 h-5" style={{color:'#d8b4fe'}} fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm9.707 5.707a1 1 0 00-1.414-1.414L9 12.586l-1.293-1.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                  </svg>
+                </div>
               </div>
-              <p className="text-4xl font-bold">{analytics?.avgQuizScore || 0}%</p>
+              <p className="text-5xl font-black text-white mt-1">{analytics?.avgQuizScore || 0}<span className="text-2xl font-bold" style={{color:'rgba(216,180,254,0.7)'}}>%</span></p>
+              <p className="text-xs mt-2" style={{color:'rgba(216,180,254,0.7)'}}>Across {analytics?.totalQuizzes || 0} quizzes</p>
             </div>
           </div>
 
-          {/* Study Time Card */}
-          <div className="bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl p-6 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
+          {/* Current Streak */}
+          <div className="relative rounded-2xl p-6 overflow-hidden"
+            style={{background:'linear-gradient(135deg,rgba(245,158,11,0.18) 0%,rgba(239,68,68,0.22) 100%)',border:'1px solid rgba(245,158,11,0.35)',backdropFilter:'blur(16px)',boxShadow:'0 8px 32px rgba(245,158,11,0.18)'}}>
+            <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full" style={{background:'rgba(239,68,68,0.15)'}}/>
+            <div className="absolute -bottom-4 -left-4 w-20 h-20 rounded-full" style={{background:'rgba(245,158,11,0.1)'}}/>
             <div className="relative z-10">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium uppercase tracking-wide opacity-90">Study Time</span>
-                <svg className="w-5 h-5 opacity-75" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                </svg>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold uppercase tracking-widest" style={{color:'rgba(253,186,116,0.9)'}}>Current Streak</span>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{background:'rgba(245,158,11,0.25)'}}>
+                  <svg className="w-5 h-5" style={{color:'#fbbf24'}} fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clipRule="evenodd"/>
+                  </svg>
+                </div>
               </div>
-              <p className="text-4xl font-bold">{Math.round((analytics?.totalQuizzes || 0) * 0.5)}h</p>
+              <p className="text-5xl font-black text-white mt-1">{analytics?.streak ?? user?.streak ?? 0}<span className="text-lg font-semibold ml-1" style={{color:'rgba(253,186,116,0.7)'}}>days</span></p>
+              <p className="text-xs mt-2" style={{color:'rgba(253,186,116,0.7)'}}>
+                Best: <span className="font-bold text-white">{analytics?.maxStreak || 0}</span> days
+              </p>
             </div>
           </div>
 
-          {/* Current Streak Card */}
-          <div className="bg-gradient-to-br from-red-400 to-red-600 rounded-2xl p-6 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
+          {/* Videos Completed */}
+          <div className="relative rounded-2xl p-6 overflow-hidden"
+            style={{background:'linear-gradient(135deg,rgba(16,185,129,0.18) 0%,rgba(6,182,212,0.22) 100%)',border:'1px solid rgba(16,185,129,0.35)',backdropFilter:'blur(16px)',boxShadow:'0 8px 32px rgba(16,185,129,0.18)'}}>
+            <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full" style={{background:'rgba(6,182,212,0.15)'}}/>
+            <div className="absolute -bottom-4 -left-4 w-20 h-20 rounded-full" style={{background:'rgba(16,185,129,0.1)'}}/>
             <div className="relative z-10">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium uppercase tracking-wide opacity-90">Current Streak</span>
-                <svg className="w-5 h-5 opacity-75" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clipRule="evenodd" />
-                </svg>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold uppercase tracking-widest" style={{color:'rgba(110,231,183,0.9)'}}>Videos Done</span>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{background:'rgba(16,185,129,0.25)'}}>
+                  <svg className="w-5 h-5" style={{color:'#6ee7b7'}} fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/>
+                  </svg>
+                </div>
               </div>
-              <p className="text-4xl font-bold">{user?.streak || 0}</p>
+              <p className="text-5xl font-black text-white mt-1">{analytics?.completedVideos || 0}</p>
+              <p className="text-xs mt-2" style={{color:'rgba(110,231,183,0.7)'}}>
+                of <span className="font-bold text-white">{analytics?.totalVideos || 0}</span> total videos
+              </p>
             </div>
           </div>
+
         </div>
 
         {/* Weekly Performance Chart - Enhanced */}

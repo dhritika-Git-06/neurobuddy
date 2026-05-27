@@ -100,21 +100,73 @@ const Layout = ({ children }) => {
                 Welcome back, {user?.name}!
               </h2>
             </div>
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2 bg-gradient-to-r from-primary-500 to-primary-600 px-4 py-2 rounded-lg shadow-sm">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
-                </svg>
-                <span className="font-bold text-white">{user?.streak || 0} Day Streak</span>
+            <div className="flex items-center gap-4">
+              {/* Notification bell with dropdown */}
+              <div className="relative group">
+                <button className="relative p-2 rounded-lg hover:bg-dark-border transition">
+                  <svg className="w-6 h-6 text-gray-400 hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">3</span>
+                </button>
+                {/* Dropdown */}
+                <div className="absolute right-0 top-12 w-80 bg-dark-card border border-dark-border rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                  <div className="p-4 border-b border-dark-border flex items-center justify-between">
+                    <span className="text-white font-semibold text-sm">Notifications</span>
+                    <span className="text-xs text-primary-400 font-medium">3 new</span>
+                  </div>
+                  <div className="divide-y divide-dark-border max-h-72 overflow-y-auto">
+                    <div className="p-4 hover:bg-dark-border/40 transition cursor-pointer">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-full bg-primary-600/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <svg className="w-4 h-4 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm text-white font-medium">Quiz completed!</p>
+                          <p className="text-xs text-gray-400 mt-0.5">You scored well on your last quiz. Keep it up!</p>
+                          <p className="text-xs text-gray-500 mt-1">Just now</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-4 hover:bg-dark-border/40 transition cursor-pointer">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clipRule="evenodd"/>
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm text-white font-medium">Streak milestone!</p>
+                          <p className="text-xs text-gray-400 mt-0.5">You're on a {user?.streak || 0}-day streak. Don't break it!</p>
+                          <p className="text-xs text-gray-500 mt-1">Today</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-4 hover:bg-dark-border/40 transition cursor-pointer">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm text-white font-medium">New videos available</p>
+                          <p className="text-xs text-gray-400 mt-0.5">Check out the latest video lectures in your subjects.</p>
+                          <p className="text-xs text-gray-500 mt-1">Yesterday</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-3 border-t border-dark-border">
+                    <button className="w-full text-xs text-primary-400 hover:text-primary-300 font-medium transition">
+                      Mark all as read
+                    </button>
+                  </div>
+                </div>
               </div>
-              <button className="relative">
-                <svg className="w-6 h-6 text-gray-400 hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                <span className="absolute -top-1 -right-1 bg-danger text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  3
-                </span>
-              </button>
+
               <button
                 onClick={handleLogout}
                 className="px-4 py-2 bg-gradient-to-r from-danger to-red-600 text-white rounded-lg hover:shadow-md transition"
